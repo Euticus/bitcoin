@@ -38,7 +38,7 @@ def run_verify(global_args: str, command: str, command_args: str) -> subprocess.
 
     return subprocess.run(
         f"{path} {global_args} {command} {command_args}",
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
 
 
 def expect_code(completed: subprocess.CompletedProcess, expected_code: int, msg: str):
