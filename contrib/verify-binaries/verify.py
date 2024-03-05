@@ -44,6 +44,7 @@ import urllib.error
 import enum
 from hashlib import sha256
 from pathlib import PurePath, Path
+from security import safe_command
 
 # The primary host; this will fail if we can't retrieve files from here.
 HOST1 = "https://bitcoincore.org"
@@ -117,7 +118,7 @@ def parse_version_string(version_str):
 
 
 def download_with_wget(remote_file, local_file):
-    result = subprocess.run(['wget', '-O', local_file, remote_file],
+    result = safe_command.run(subprocess.run, ['wget', '-O', local_file, remote_file],
                             stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     return result.returncode == 0, result.stdout.decode().rstrip()
 
@@ -145,7 +146,7 @@ def verify_with_gpg(
             '--output', output_filename if output_filename else '', signature_filename, filename]
 
         env = dict(os.environ, LANGUAGE='en')
-        result = subprocess.run(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=env)
+        result = safe_command.run(subprocess.run, args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=env)
 
         gpg_data = status_file.read().decode().rstrip()
 
@@ -343,8 +344,7 @@ def check_multisig(sums_file: str, sigfilename: str, args: argparse.Namespace) -
         # Retrieve unknown keys and then try GPG again.
         for unsig in unknown:
             if prompt_yn(f" ? Retrieve key {unsig.key} ({unsig.name})? (y/N) "):
-                ran = subprocess.run(
-                    ["gpg", "--keyserver", args.keyserver, "--recv-keys", unsig.key])
+                ran = safe_command.run(subprocess.run, ["gpg", "--keyserver", args.keyserver, "--recv-keys", unsig.key])
 
                 if ran.returncode != 0:
                     log.warning(f"failed to retrieve key {unsig.key}")
