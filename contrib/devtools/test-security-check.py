@@ -11,6 +11,7 @@ import subprocess
 import unittest
 
 from utils import determine_wellknown_cmd
+from security import safe_command
 
 def write_testcode(filename):
     with open(filename, 'w', encoding="utf8") as f:
@@ -37,12 +38,12 @@ def call_security_check(cc: str, source: str, executable: str, options) -> tuple
     for var in ['CFLAGS', 'CPPFLAGS', 'LDFLAGS']:
         env_flags += filter(None, os.environ.get(var, '').split(' '))
 
-    subprocess.run([*cc,source,'-o',executable] + env_flags + options, check=True)
-    p = subprocess.run([os.path.join(os.path.dirname(__file__), 'security-check.py'), executable], stdout=subprocess.PIPE, text=True)
+    safe_command.run(subprocess.run, [*cc,source,'-o',executable] + env_flags + options, check=True)
+    p = safe_command.run(subprocess.run, [os.path.join(os.path.dirname(__file__), 'security-check.py'), executable], stdout=subprocess.PIPE, text=True)
     return (p.returncode, p.stdout.rstrip())
 
 def get_arch(cc, source, executable):
-    subprocess.run([*cc, source, '-o', executable], check=True)
+    safe_command.run(subprocess.run, [*cc, source, '-o', executable], check=True)
     binary = lief.parse(executable)
     arch = binary.abstract.header.architecture
     os.remove(executable)
