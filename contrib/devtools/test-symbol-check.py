@@ -10,6 +10,7 @@ import subprocess
 import unittest
 
 from utils import determine_wellknown_cmd
+from security import safe_command
 
 def call_symbol_check(cc: list[str], source, executable, options):
     # This should behave the same as AC_TRY_LINK, so arrange well-known flags
@@ -21,14 +22,14 @@ def call_symbol_check(cc: list[str], source, executable, options):
     for var in ['CFLAGS', 'CPPFLAGS', 'LDFLAGS']:
         env_flags += filter(None, os.environ.get(var, '').split(' '))
 
-    subprocess.run([*cc,source,'-o',executable] + env_flags + options, check=True)
-    p = subprocess.run([os.path.join(os.path.dirname(__file__), 'symbol-check.py'), executable], stdout=subprocess.PIPE, text=True)
+    safe_command.run(subprocess.run, [*cc,source,'-o',executable] + env_flags + options, check=True)
+    p = safe_command.run(subprocess.run, [os.path.join(os.path.dirname(__file__), 'symbol-check.py'), executable], stdout=subprocess.PIPE, text=True)
     os.remove(source)
     os.remove(executable)
     return (p.returncode, p.stdout.rstrip())
 
 def get_machine(cc: list[str]):
-    p = subprocess.run([*cc,'-dumpmachine'], stdout=subprocess.PIPE, text=True)
+    p = safe_command.run(subprocess.run, [*cc,'-dumpmachine'], stdout=subprocess.PIPE, text=True)
     return p.stdout.rstrip()
 
 class TestSymbolChecks(unittest.TestCase):
